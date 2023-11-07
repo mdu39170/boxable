@@ -169,4 +169,8 @@ public class PageContentStreamOptimized {
         endText();
         pageContentStream.close();
     }
+
+    public void setCharacterSpacing(float charSpacing) throws IOException {
+        pageContentStream.setCharacterSpacing(charSpacing);
+    }
 }

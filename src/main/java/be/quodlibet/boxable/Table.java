@@ -11,18 +11,22 @@ import be.quodlibet.boxable.text.WrappingFunction;
 import be.quodlibet.boxable.utils.FontUtils;
 import be.quodlibet.boxable.utils.PDStreamUtils;
 import be.quodlibet.boxable.utils.PageContentStreamOptimized;
+
 import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.apache.pdfbox.pdmodel.interactive.action.PDActionURI;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotation;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink;
@@ -63,48 +67,48 @@ public abstract class Table<T extends PDPage> {
     private boolean drawDebug;
 
     /**
-     * @deprecated Use one of the constructors that pass a {@link PageProvider}
-     * @param yStart Y position where {@link Table} will start
-     * @param yStartNewPage Y position where possible new page of {@link Table}
-     * will start
+     * @param yStart           Y position where {@link Table} will start
+     * @param yStartNewPage    Y position where possible new page of {@link Table}
+     *                         will start
      * @param pageBottomMargin bottom margin of {@link Table}
-     * @param width {@link Table} width
-     * @param margin {@link Table} margin
-     * @param document {@link PDDocument} where {@link Table} will be drawn
-     * @param currentPage current page where {@link Table} will be drawn (some
-     * tables are big and can be through multiple pages)
-     * @param drawLines draw {@link Table}'s borders
-     * @param drawContent draw {@link Table}'s content
+     * @param width            {@link Table} width
+     * @param margin           {@link Table} margin
+     * @param document         {@link PDDocument} where {@link Table} will be drawn
+     * @param currentPage      current page where {@link Table} will be drawn (some
+     *                         tables are big and can be through multiple pages)
+     * @param drawLines        draw {@link Table}'s borders
+     * @param drawContent      draw {@link Table}'s content
      * @throws IOException if fonts are not loaded correctly
+     * @deprecated Use one of the constructors that pass a {@link PageProvider}
      */
     @Deprecated
     public Table(float yStart, float yStartNewPage, float pageBottomMargin, float width, float margin,
-            PDDocument document, T currentPage, boolean drawLines, boolean drawContent) throws IOException {
+                 PDDocument document, T currentPage, boolean drawLines, boolean drawContent) throws IOException {
         this(yStart, yStartNewPage, 0, pageBottomMargin, width, margin, document, currentPage, drawLines, drawContent,
                 null);
     }
-  
+
     /**
-     * @deprecated Use one of the constructors that pass a {@link PageProvider}
-     * @param yStartNewPage Y position where possible new page of {@link Table}
-     * will start
+     * @param yStartNewPage    Y position where possible new page of {@link Table}
+     *                         will start
      * @param pageBottomMargin bottom margin of {@link Table}
-     * @param width {@link Table} width
-     * @param margin {@link Table} margin
-     * @param document {@link PDDocument} where {@link Table} will be drawn
-     * @param drawLines draw {@link Table}'s borders
-     * @param drawContent draw {@link Table}'s content
+     * @param width            {@link Table} width
+     * @param margin           {@link Table} margin
+     * @param document         {@link PDDocument} where {@link Table} will be drawn
+     * @param drawLines        draw {@link Table}'s borders
+     * @param drawContent      draw {@link Table}'s content
      * @throws IOException if fonts are not loaded correctly
+     * @deprecated Use one of the constructors that pass a {@link PageProvider}
      */
     @Deprecated
     public Table(float yStartNewPage, float pageBottomMargin, float width, float margin, PDDocument document,
-            boolean drawLines, boolean drawContent) throws IOException {
+                 boolean drawLines, boolean drawContent) throws IOException {
         this(yStartNewPage, 0, pageBottomMargin, width, margin, document, drawLines, drawContent, null);
     }
 
     public Table(float yStart, float yStartNewPage, float pageTopMargin, float pageBottomMargin, float width,
-            float margin, PDDocument document, T currentPage, boolean drawLines, boolean drawContent,
-            PageProvider<T> pageProvider) throws IOException {
+                 float margin, PDDocument document, T currentPage, boolean drawLines, boolean drawContent,
+                 PageProvider<T> pageProvider) throws IOException {
         this.pageTopMargin = pageTopMargin;
         this.document = document;
         this.drawLines = drawLines;
@@ -119,9 +123,9 @@ public abstract class Table<T extends PDPage> {
         this.pageProvider = pageProvider;
         loadFonts();
     }
-  
+
     public Table(float yStartNewPage, float pageTopMargin, float pageBottomMargin, float width, float margin,
-            PDDocument document, boolean drawLines, boolean drawContent, PageProvider<T> pageProvider)
+                 PDDocument document, boolean drawLines, boolean drawContent, PageProvider<T> pageProvider)
             throws IOException {
         this.pageTopMargin = pageTopMargin;
         this.document = document;
@@ -149,13 +153,17 @@ public abstract class Table<T extends PDPage> {
         return document;
     }
 
+    protected PageContentStreamOptimized getTableContentStream() {
+        return tableContentStream;
+    }
+
     public void drawTitle(String title, PDFont font, int fontSize, float tableWidth, float height, String alignment,
-            float freeSpaceForPageBreak, boolean drawHeaderMargin) throws IOException {
+                          float freeSpaceForPageBreak, boolean drawHeaderMargin) throws IOException {
         drawTitle(title, font, fontSize, tableWidth, height, alignment, freeSpaceForPageBreak, null, drawHeaderMargin);
     }
 
     public void drawTitle(String title, PDFont font, int fontSize, float tableWidth, float height, String alignment,
-            float freeSpaceForPageBreak, WrappingFunction wrappingFunction, boolean drawHeaderMargin)
+                          float freeSpaceForPageBreak, WrappingFunction wrappingFunction, boolean drawHeaderMargin)
             throws IOException {
 
         ensureStreamIsOpen();
@@ -193,6 +201,19 @@ public abstract class Table<T extends PDPage> {
         }
     }
 
+    public void drawSpace(int height) throws IOException {
+        drawTitle(
+                "",
+                new PDType1Font(Standard14Fonts.FontName.HELVETICA),
+                height,
+                this.currentPage.getCropBox().getUpperRightX(),
+                height,
+                "left",
+                30f,
+                true
+        );
+    }
+
     public float getWidth() {
         return width;
     }
@@ -218,7 +239,6 @@ public abstract class Table<T extends PDPage> {
      *
      * @return Y position of the table
      * @throws IOException if underlying stream has problem being written to.
-     *
      */
     public float draw() throws IOException {
         ensureStreamIsOpen();
@@ -340,8 +360,8 @@ public abstract class Table<T extends PDPage> {
     }
 
     /**
-     * @deprecated Use a {@link PageProvider} instead
      * @return new {@link PDPage}
+     * @deprecated Use a {@link PageProvider} instead
      */
     @Deprecated
     // remove also createNewPage()
@@ -398,9 +418,9 @@ public abstract class Table<T extends PDPage> {
                         break;
                 }
                 imageCell.getImage().draw(document, tableContentStream, cursorX, cursorY);
-              
+
                 if (imageCell.getUrl() != null) {
-                    List<PDAnnotation> annotations = ((PDPage)currentPage).getAnnotations();
+                    List<PDAnnotation> annotations = ((PDPage) currentPage).getAnnotations();
 
                     PDBorderStyleDictionary borderULine = new PDBorderStyleDictionary();
                     borderULine.setStyle(PDBorderStyleDictionary.STYLE_UNDERLINE);
@@ -411,7 +431,7 @@ public abstract class Table<T extends PDPage> {
 
                     // Set the rectangle containing the link
                     // PDRectangle sets a the x,y and the width and height extend upwards from that!
-                    PDRectangle position = new PDRectangle(cursorX, cursorY, (float)(imageCell.getImage().getWidth()), -(float)(imageCell.getImage().getHeight()));
+                    PDRectangle position = new PDRectangle(cursorX, cursorY, (float) (imageCell.getImage().getWidth()), -(float) (imageCell.getImage().getHeight()));
                     txtLink.setRectangle(position);
 
                     // add an action
@@ -564,14 +584,14 @@ public abstract class Table<T extends PDPage> {
                             cursorY -= cell.getVerticalFreeSpace();
                             break;
                     }
-                  
+
                     if (cell.getUrl() != null) {
-                        List<PDAnnotation> annotations = ((PDPage)currentPage).getAnnotations();
+                        List<PDAnnotation> annotations = ((PDPage) currentPage).getAnnotations();
                         PDAnnotationLink txtLink = new PDAnnotationLink();
 
                         // Set the rectangle containing the link
                         // PDRectangle sets a the x,y and the width and height extend upwards from that!
-                        PDRectangle position = new PDRectangle(cursorX - 5, cursorY + 10, (float)(cell.getWidth()), -(float)(cell.getHeight()));
+                        PDRectangle position = new PDRectangle(cursorX - 5, cursorY + 10, (float) (cell.getWidth()), -(float) (cell.getHeight()));
                         txtLink.setRectangle(position);
 
                         // add an action
@@ -849,9 +869,9 @@ public abstract class Table<T extends PDPage> {
     /**
      * /**
      *
+     * @param header row that will be set as table's header row
      * @deprecated Use {@link #addHeaderRow(Row)} instead, as it supports
      * multiple header rows
-     * @param header row that will be set as table's header row
      */
     @Deprecated
     public void setHeader(Row<T> header) {
